@@ -215,8 +215,9 @@ const getComponent = (Vue) => {
         // Avoid using this.lazyParentModel to not get dependent on it.
         // Passed as an argument for workaround
         const model = this.getModel()
+        const ctx = this.context
         pushParams()
-        const rawOutput = this.rule.call(this.rootModel, model, parent)
+        const rawOutput = this.rule.call(this.rootModel, model, parent, ctx)
         const output = isPromise(rawOutput)
           ? makePendingAsyncVm(Vue, rawOutput)
           : rawOutput
@@ -309,7 +310,8 @@ const getComponent = (Vue) => {
         model: null,
         prop: null,
         lazyParentModel: null,
-        rootModel: null
+        rootModel: null,
+        path: []
       }
     },
     methods: {
@@ -453,6 +455,7 @@ const getComponent = (Vue) => {
 
         return this.keys
           .map((key) => {
+            console.error('KEY', key)
             const track = this.tracker(key)
             if (usedTracks.hasOwnProperty(track)) {
               return null
@@ -463,7 +466,8 @@ const getComponent = (Vue) => {
               prop: key,
               lazyParentModel: this.getModelLazy,
               model: model[key],
-              rootModel: this.rootModel
+              rootModel: this.rootModel,
+              path: this.path ? [...this.path, key] : []
             })
           })
           .filter(Boolean)
@@ -489,7 +493,8 @@ const getComponent = (Vue) => {
         lazyParentModel: vm.lazyParentModel,
         prop: key,
         lazyModel: vm.getModel,
-        rootModel: vm.rootModel
+        rootModel: vm.rootModel,
+        path: vm.path
       })
     }
     const validations = vm.validations[key]
@@ -508,7 +513,8 @@ const getComponent = (Vue) => {
         lazyParentModel: NIL,
         prop: key,
         lazyModel: NIL,
-        rootModel: root
+        rootModel: root,
+        path: vm.path ? [...vm.path, key] : []
       })
     }
     return h(Validation, key, {
@@ -516,7 +522,8 @@ const getComponent = (Vue) => {
       lazyParentModel: vm.getModel,
       prop: key,
       lazyModel: vm.getModelKey,
-      rootModel: vm.rootModel
+      rootModel: vm.rootModel,
+      path: vm.path ? [...vm.path, key] : []
     })
   }
 
@@ -525,7 +532,8 @@ const getComponent = (Vue) => {
       rule: vm.validations[key],
       lazyParentModel: vm.lazyParentModel,
       lazyModel: vm.getModel,
-      rootModel: vm.rootModel
+      rootModel: vm.rootModel,
+      context: { path: vm.path }
     })
   }
 
@@ -560,7 +568,8 @@ const validateModel = (model, validations) => {
             lazyParentModel: NIL,
             prop: '$v',
             model,
-            rootModel: model
+            rootModel: model,
+            path: []
           })
         ]
       }

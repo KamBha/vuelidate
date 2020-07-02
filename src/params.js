@@ -36,7 +36,8 @@ function addParams(params) {
 function withParamsDirect(params, validator) {
   return withParamsClosure((add) => {
     return function(...args) {
-      add(params)
+      if (typeof params === 'function') add(params.apply(this, args))
+      else add(params)
       return validator.apply(this, args)
     }
   })
@@ -55,7 +56,11 @@ function withParamsClosure(closure) {
 }
 
 export function withParams(paramsOrClosure, maybeValidator) {
-  if (typeof paramsOrClosure === 'object' && maybeValidator !== undefined) {
+  if (
+    (typeof paramsOrClosure === 'object' ||
+      typeof paramsOrClosure === 'function') &&
+    maybeValidator !== undefined
+  ) {
     return withParamsDirect(paramsOrClosure, maybeValidator)
   }
   return withParamsClosure(paramsOrClosure)
